@@ -1,0 +1,40 @@
+# Xcode
+xcuserdata/
+
+## Obj-C/Swift specific
+*.hmap
+
+## App packaging
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager
+.build/
+
+# Carthage
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# macOS
+.DS_Store
+
+# API keys / secrets
+*.xcconfig
+Secrets.swift
+Config.swift
+APIKeys.swift
+
+# GRDB database files
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
