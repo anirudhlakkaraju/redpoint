@@ -7,18 +7,14 @@ struct RootTabView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             TabView(selection: $selectedTab) {
-                DateTabView()
-                    .tabItem { Label("Log", systemImage: "calendar") }
-                    .tag(0)
-                StatsView()
-                    .tabItem { Label("Stats", systemImage: "chart.pie") }
-                    .tag(1)
-                ActivitiesView()
-                    .tabItem { Label("Activities", systemImage: "list.bullet") }
-                    .tag(2)
-                MoreView()
-                    .tabItem { Label("More", systemImage: "ellipsis") }
-                    .tag(3)
+                DateTabView().tag(0)
+                StatsView().tag(1)
+                ActivitiesView().tag(2)
+                MoreView().tag(3)
+            }
+            .toolbar(.hidden, for: .tabBar)
+            .safeAreaInset(edge: .bottom) {
+                CustomTabBar(selectedTab: $selectedTab)
             }
 
             if selectedTab == 0 {
@@ -28,13 +24,13 @@ struct RootTabView: View {
                     Image(systemName: "plus")
                         .font(.title2.weight(.semibold))
                         .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
+                        .frame(width: 50, height: 50)
                         .background(Color.red)
                         .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
+                        .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
                 }
                 .padding(.trailing, 20)
-                .padding(.bottom, 90)
+                .padding(.bottom, 80)
                 .fullScreenCover(isPresented: $showCamera) {
                     NavigationStack {
                         CameraView()
