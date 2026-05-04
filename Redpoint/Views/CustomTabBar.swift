@@ -4,10 +4,10 @@ struct CustomTabBar: View {
     @Binding var selectedTab: Int
 
     private let tabs: [(icon: String, label: String)] = [
-        ("calendar",    "Log"),
-        ("chart.pie",   "Stats"),
+        ("calendar", "Log"),
+        ("chart.pie", "Stats"),
         ("list.bullet", "Activities"),
-        ("ellipsis",    "More")
+        ("ellipsis", "More"),
     ]
 
     var body: some View {
@@ -27,7 +27,9 @@ struct CustomTabBar: View {
                             Text(tabs[index].label)
                                 .font(.caption2)
                         }
-                        .foregroundStyle(selectedTab == index ? .primary : Color.primary.opacity(0.4))
+                        .foregroundStyle(
+                            selectedTab == index ? .primary : Color.primary.opacity(0.4)
+                        )
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                     }
