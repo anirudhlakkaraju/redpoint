@@ -39,20 +39,38 @@ struct MockData {
                     keyMetric: "7.1 mi"),
     ]
 
-    static func currentWeekGroups() -> [DayGroup] {
+    static func weekGroups(for date: Date = Date()) -> [DayGroup] {
         let calendar = Calendar.current
-        let today = Date()
-        let weekday = calendar.component(.weekday, from: today)
+        let weekday = calendar.component(.weekday, from: date)
         let daysFromMonday = (weekday + 5) % 7
-        let monday = calendar.date(byAdding: .day, value: -daysFromMonday, to: today)!
+        let monday = calendar.date(byAdding: .day, value: -daysFromMonday, to: date)!
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
 
-        return (0..<7).map { offset in
+        return (0..<7).compactMap { offset in
             let day = calendar.date(byAdding: .day, value: offset, to: monday)!
             let key = formatter.string(from: day)
             let daySessions = sessions.filter { $0.date == key }
+            guard !daySessions.isEmpty else { return nil }
+            return DayGroup(id: key, date: day, sessions: daySessions)
+        }
+    }
+
+    static func monthGroups(for date: Date = Date()) -> [DayGroup] {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month], from: date)
+        let firstDay = calendar.date(from: components)!
+        let range = calendar.range(of: .day, in: .month, for: firstDay)!
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        return range.compactMap { dayNum in
+            guard let day = calendar.date(bySetting: .day, value: dayNum, of: firstDay) else { return nil }
+            let key = formatter.string(from: day)
+            let daySessions = sessions.filter { $0.date == key }
+            guard !daySessions.isEmpty else { return nil }
             return DayGroup(id: key, date: day, sessions: daySessions)
         }
     }

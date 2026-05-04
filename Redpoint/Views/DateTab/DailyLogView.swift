@@ -1,17 +1,17 @@
 import SwiftUI
 
-struct WeeklyLogView: View {
+struct DailyLogView: View {
     let currentDate: Date
-    private var weekDays: [DayGroup] { MockData.weekGroups(for: currentDate) }
+    private var monthDays: [DayGroup] { MockData.monthGroups(for: currentDate) }
 
     var body: some View {
-        if weekDays.isEmpty {
+        if monthDays.isEmpty {
             ContentUnavailableView("No Sessions", systemImage: "figure.run.circle",
-                                   description: Text("No workouts logged this week"))
+                                   description: Text("No workouts logged this month"))
         } else {
             ScrollView {
                 VStack(spacing: 5) {
-                    ForEach(weekDays) { day in
+                    ForEach(monthDays) { day in
                         DayCardView(day: day)
                     }
                 }
@@ -23,5 +23,5 @@ struct WeeklyLogView: View {
 }
 
 #Preview {
-    WeeklyLogView(currentDate: Date())
+    DailyLogView(currentDate: Date())
 }
