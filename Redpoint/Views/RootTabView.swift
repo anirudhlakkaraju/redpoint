@@ -2,7 +2,7 @@ import SwiftUI
 
 struct RootTabView: View {
     @State private var selectedTab: Int = 0
-    @State private var showCamera: Bool = false
+    @State private var showEntry: Bool = false
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -19,7 +19,7 @@ struct RootTabView: View {
 
             if selectedTab == 0 {
                 Button {
-                    showCamera = true
+                    showEntry = true
                 } label: {
                     Image(systemName: "plus")
                         .font(.title2.weight(.semibold))
@@ -31,10 +31,8 @@ struct RootTabView: View {
                 }
                 .padding(.trailing, 20)
                 .padding(.bottom, 80)
-                .fullScreenCover(isPresented: $showCamera) {
-                    NavigationStack {
-                        CameraView()
-                    }
+                .fullScreenCover(isPresented: $showEntry) {
+                    ManualEntryView()
                 }
             }
         }
