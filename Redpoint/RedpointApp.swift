@@ -9,6 +9,9 @@ import SwiftUI
 
 @main
 struct RedpointApp: App {
+    init() {
+        _ = DatabaseManager.shared
+    }
     var body: some Scene {
         WindowGroup {
             ContentView()
