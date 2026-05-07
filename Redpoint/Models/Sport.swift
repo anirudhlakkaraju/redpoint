@@ -8,6 +8,25 @@ enum Sport: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var dbValue: String {
+        switch self {
+        case .running:  return "running"
+        case .lifting:  return "weight_training"
+        case .climbing: return "climbing"
+        case .yoga:     return "yoga"
+        }
+    }
+
+    static func from(apiString: String) -> Sport? {
+        switch apiString.lowercased() {
+        case "running":         return .running
+        case "weight_training": return .lifting
+        case "climbing":        return .climbing
+        case "yoga":            return .yoga
+        default:                return nil
+        }
+    }
+
     var icon: String {
         switch self {
         case .running: return "figure.run"
