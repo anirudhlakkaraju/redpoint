@@ -7,8 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4D5E26682FA8256200B691F6 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5E26672FA8256200B691F6 /* GRDB */; };
-		4D5E266A2FA8256200B691F6 /* GRDB-dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5E26692FA8256200B691F6 /* GRDB-dynamic */; };
+		4D5E26732FACF2BB00B691F6 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5E26722FACF2BB00B691F6 /* GRDB */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,8 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4D5E26682FA8256200B691F6 /* GRDB in Frameworks */,
-				4D5E266A2FA8256200B691F6 /* GRDB-dynamic in Frameworks */,
+				4D5E26732FACF2BB00B691F6 /* GRDB in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,8 +70,7 @@
 			);
 			name = Redpoint;
 			packageProductDependencies = (
-				4D5E26672FA8256200B691F6 /* GRDB */,
-				4D5E26692FA8256200B691F6 /* GRDB-dynamic */,
+				4D5E26722FACF2BB00B691F6 /* GRDB */,
 			);
 			productName = Redpoint;
 			productReference = 4D5E26252F9EBD3900B691F6 /* Redpoint.app */;
@@ -104,7 +101,7 @@
 			mainGroup = 4D5E261C2F9EBD3900B691F6;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				4D5E26662FA8256200B691F6 /* XCRemoteSwiftPackageReference "GRDB" */,
+				4D5E26712FACF2BB00B691F6 /* XCRemoteSwiftPackageReference "GRDB" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4D5E26262F9EBD3900B691F6 /* Products */;
@@ -350,7 +347,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4D5E26662FA8256200B691F6 /* XCRemoteSwiftPackageReference "GRDB" */ = {
+		4D5E26712FACF2BB00B691F6 /* XCRemoteSwiftPackageReference "GRDB" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift";
 			requirement = {
@@ -361,15 +358,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4D5E26672FA8256200B691F6 /* GRDB */ = {
+		4D5E26722FACF2BB00B691F6 /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4D5E26662FA8256200B691F6 /* XCRemoteSwiftPackageReference "GRDB" */;
+			package = 4D5E26712FACF2BB00B691F6 /* XCRemoteSwiftPackageReference "GRDB" */;
 			productName = GRDB;
-		};
-		4D5E26692FA8256200B691F6 /* GRDB-dynamic */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4D5E26662FA8256200B691F6 /* XCRemoteSwiftPackageReference "GRDB" */;
-			productName = "GRDB-dynamic";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
