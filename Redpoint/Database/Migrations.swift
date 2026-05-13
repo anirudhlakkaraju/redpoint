@@ -48,11 +48,18 @@ enum Migrations {
                 t.column("wt_training_session_id", .integer).notNull()
                     .references("weight_training", onDelete: .cascade)
                 t.column("name", .text).notNull()
-                t.column("sets", .integer)
-                t.column("reps", .integer)
+                t.column("notes", .text)
+            }
+
+            try db.create(table: "exercise_sets") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("exercise_id", .integer).notNull()
+                    .references("exercises", onDelete: .cascade)
+                t.column("reps", .text).notNull()
                 t.column("weight", .real)
                 t.column("weight_unit", .text)
-                t.column("notes", .text)
+                t.column("is_warmup", .boolean).notNull().defaults(to: false)
+                t.column("set_order", .integer).notNull().defaults(to: 0)
             }
             
             try db.create(table: "climbing") {t in

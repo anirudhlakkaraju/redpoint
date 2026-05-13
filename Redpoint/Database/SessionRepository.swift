@@ -10,7 +10,7 @@ import GRDB
 
 enum SessionDetail {
     case running(RunningSession)
-    case weightTraining(WeightTrainingSession, [Exercise])
+    case weightTraining(WeightTrainingSession, [ExerciseEntry])
     case climbing(ClimbingSession, [ClimbingRoute])
     case yoga(YogaSession, [YogaPose])
 }
@@ -33,13 +33,27 @@ final class SessionRepository {
                 r.sessionId = sessionId
                 try r.insert(database)
 
-            case .weightTraining(var wt, let exercises):
+            case .weightTraining(var wt, let entries):
                 wt.sessionId = sessionId
                 try wt.insert(database)
                 guard let wtId = wt.id else { return }
-                for var ex in exercises {
-                    ex.wtTrainingSessionId = wtId
+                for entry in entries {
+                    var ex = Exercise(
+                        id: nil, wtTrainingSessionId: wtId,
+                        name: entry.name,
+                        notes: entry.notes.isEmpty ? nil : entry.notes)
                     try ex.insert(database)
+                    guard let exId = ex.id else { continue }
+                    for (order, set) in entry.sets.enumerated() {
+                        var row = ExerciseSet(
+                            id: nil, exerciseId: exId,
+                            reps: set.reps,
+                            weight: Double(set.weight),
+                            weightUnit: set.unit,
+                            isWarmup: set.isWarmup,
+                            setOrder: order)
+                        try row.insert(database)
+                    }
                 }
 
             case .climbing(var c, let routes):

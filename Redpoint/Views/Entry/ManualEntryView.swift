@@ -1,133 +1,110 @@
 import SwiftUI
 
-// MARK: - Form helper structs (local to this file, not DB models)
+// MARK: - Active field
 
-struct ExerciseEntry: Identifiable {
-    var id = UUID()
-    var name: String = ""
-    var sets: String = ""
-    var reps: String = ""
-    var weight: String = ""
-    var weightUnit: String = "lb"
-    var notes: String = ""
+enum ActiveField: Equatable {
+    case date, sport, duration
+    case target, climbType
+    case exercise(UUID?)
+    case route(UUID?)
+    case pose(UUID?)
+    case none
 }
 
-struct RouteEntry: Identifiable {
-    var id = UUID()
-    var name: String = ""
-    var sent: Bool = false
-    var attempts: String = "1"
-    var grade: String = ""
-    var notes: String = ""
-}
-
-struct PoseEntry: Identifiable {
-    var id = UUID()
-    var name: String = ""
-}
-
-// MARK: - Main view
+// MARK: - View
 
 struct ManualEntryView: View {
     @Environment(\.dismiss) private var dismiss
+    @StateObject var suggestions = SuggestionsStore()
+
+    @State var activeField: ActiveField = .sport
 
     // Common
-    @State private var sport: Sport = .running
-    @State private var date: Date = Date()
-    @State private var durationMinutes: String = ""
-    @State private var notes: String = ""
-    @State private var feel: Int = 0
-    @State private var isSaving = false
-    @State private var errorMessage: String?
+    @State var date = Date()
+    @State var selectedSport: Sport? = nil
+    @State var durationMinutes = 0
+    @State var notes = ""
+    @State var feel = 0
 
     // Running
-    @State private var distanceMiles: String = ""
-    @State private var runTime: String = ""
-    @State private var pace: String = ""
+    @State var distanceMiles = ""
+    @State var runTime = ""
+    @State var pace = ""
 
     // Weight training
-    @State private var target: String = ""
-    @State private var exercises: [ExerciseEntry] = [ExerciseEntry()]
+    @State var target = ""
+    @State var exercises: [ExerciseEntry] = []
+    @State var draftEx = ExerciseEntry()
+    @State var draftSet = SetEntry()
+    @State var editingExId: UUID? = nil
 
     // Climbing
-    @State private var climbType: String = ""
-    @State private var routes: [RouteEntry] = [RouteEntry()]
+    @State var climbType = ""
+    @State var routes: [RouteEntry] = []
+    @State var draftRoute = RouteEntry()
+    @State var editingRouteId: UUID? = nil
 
     // Yoga
-    @State private var style: String = ""
-    @State private var instructor: String = ""
-    @State private var poses: [PoseEntry] = [PoseEntry()]
+    @State var yogaStyle = ""
+    @State var instructor = ""
+    @State var poses: [PoseEntry] = []
+    @State var draftPose = PoseEntry()
+    @State var editingPoseId: UUID? = nil
+
+    @State var isSaving = false
+    @State var errorMessage: String? = nil
+
+    var showsBottomPanel: Bool {
+        activeField != .none
+    }
 
     var body: some View {
         NavigationStack {
-            Form {
-                // Sport picker
-                Section {
-                    HStack(spacing: 0) {
-                        ForEach(Sport.allCases) { s in
-                            Button {
-                                sport = s
-                            } label: {
-                                VStack(spacing: 4) {
-                                    Image(systemName: s.icon)
-                                        .font(.title3)
-                                    Text(s.rawValue)
-                                        .font(.caption2)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                                .background(sport == s ? Color.red.opacity(0.15) : Color.clear)
-                                .foregroundStyle(sport == s ? Color.red : Color.primary.opacity(0.5))
+            VStack(spacing: 0) {
+
+                // ── Top: field rows ──────────────────────────
+                ScrollView {
+                    VStack(spacing: 0) {
+                        fieldRow(
+                            "Date",
+                            value: date.formatted(
+                                .dateTime.weekday(.abbreviated).month(.abbreviated).day().year()),
+                            field: .date)
+
+                        fieldRow(
+                            "Sport",
+                            value: selectedSport?.rawValue ?? "",
+                            placeholder: "Select sport",
+                            field: .sport)
+
+                        if selectedSport != nil {
+
+                            switch selectedSport {
+                            case .running: runningRows
+                            case .lifting: weightTrainingRows
+                            case .climbing: climbingRows
+                            case .yoga: yogaRows
+                            case .none: EmptyView()
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
 
-                // Common fields
-                Section("Session") {
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
-
-                    HStack {
-                        Text("Duration")
-                        Spacer()
-                        TextField("0", text: $durationMinutes)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 50)
-                        Text("min").foregroundStyle(.secondary)
-                    }
-
-                    HStack {
-                        Text("Feel")
-                        Spacer()
-                        ForEach(1...5, id: \.self) { i in
-                            Button {
-                                feel = (feel == i) ? 0 : i
-                            } label: {
-                                Image(systemName: i <= feel ? "star.fill" : "star")
-                                    .foregroundStyle(i <= feel ? .yellow : Color.primary.opacity(0.3))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-
-                    TextField("Notes", text: $notes, axis: .vertical)
-                        .lineLimit(2...5)
+                // ── Divider ───────────────────────────────────
+                if showsBottomPanel {
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.12))
+                        .frame(height: 1)
                 }
 
-                // Sport-specific fields
-                switch sport {
-                case .running:
-                    runningSection
-                case .lifting:
-                    weightTrainingSection
-                case .climbing:
-                    climbingSection
-                case .yoga:
-                    yogaSection
+                // ── Bottom panel ──────────────────────────────
+                if showsBottomPanel {
+                    bottomPanel
+                        .frame(minHeight: UIScreen.main.bounds.height * 0.45)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            .animation(.easeInOut(duration: 0.2), value: activeField)
             .navigationTitle("Log Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -137,181 +114,258 @@ struct ManualEntryView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") { save() }
                         .fontWeight(.semibold)
-                        .disabled(isSaving)
+                        .disabled(selectedSport == nil || isSaving)
                 }
             }
-            .overlay {
-                if let error = errorMessage {
-                    VStack {
-                        Spacer()
-                        Text(error)
-                            .font(.caption)
-                            .foregroundStyle(.white)
-                            .padding()
-                            .background(Color.red.opacity(0.85))
-                            .cornerRadius(8)
-                            .padding()
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Sport sections
-
-    private var runningSection: some View {
-        Section("Run Details") {
-            HStack {
-                Text("Distance")
-                Spacer()
-                TextField("0.0", text: $distanceMiles)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 60)
-                Text("mi").foregroundStyle(.secondary)
-            }
-            HStack {
-                Text("Time")
-                Spacer()
-                TextField("mm:ss", text: $runTime)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 70)
-            }
-            HStack {
-                Text("Pace")
-                Spacer()
-                TextField("mm:ss/mi", text: $pace)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 80)
-            }
-        }
-    }
-
-    private var weightTrainingSection: some View {
-        Section("Workout Details") {
-            TextField("Target (e.g. Push, Legs + Pull)", text: $target)
-
-            ForEach($exercises) { $ex in
-                VStack(alignment: .leading, spacing: 6) {
-                    TextField("Exercise name", text: $ex.name)
-                        .font(.subheadline.weight(.medium))
-                    HStack {
-                        TextField("Sets", text: $ex.sets)
-                            .keyboardType(.numberPad)
-                            .frame(maxWidth: .infinity)
-                        Text("×").foregroundStyle(.secondary)
-                        TextField("Reps", text: $ex.reps)
-                            .keyboardType(.numberPad)
-                            .frame(maxWidth: .infinity)
-                        TextField("Weight", text: $ex.weight)
-                            .keyboardType(.decimalPad)
-                            .frame(maxWidth: .infinity)
-                        Picker("", selection: $ex.weightUnit) {
-                            Text("lb").tag("lb")
-                            Text("kg").tag("kg")
-                            Text("kb").tag("kb")
-                            Text("bw").tag("bw")
-                        }
-                        .frame(width: 50)
-                    }
-                    .font(.caption)
-                    TextField("Notes", text: $ex.notes)
+            .overlay(alignment: .bottom) {
+                if let msg = errorMessage {
+                    Text(msg)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.red.opacity(0.9))
+                        .cornerRadius(8)
+                        .padding(.bottom, 20)
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                errorMessage = nil
+                            }
+                        }
                 }
-                .padding(.vertical, 2)
-            }
-            .onDelete { exercises.remove(atOffsets: $0) }
-
-            Button { exercises.append(ExerciseEntry()) } label: {
-                Label("Add Exercise", systemImage: "plus.circle")
             }
         }
     }
 
-    private var climbingSection: some View {
-        Section("Climbing Details") {
-            HStack {
-                Text("Type")
-                Spacer()
-                Picker("", selection: $climbType) {
-                    Text("Boulder").tag("boulder")
-                    Text("Route").tag("route")
-                    Text("Mixed").tag("mixed")
+    // MARK: - Bottom panel
+
+    @ViewBuilder
+    var bottomPanel: some View {
+        switch activeField {
+        case .date:
+            CalendarDatePicker(date: $date)
+                .frame(height: UIScreen.main.bounds.height * 0.45)
+
+        case .sport:
+            let sportCols = 2
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: sportCols),
+                spacing: 0
+            ) {
+                ForEach(Array(Sport.allCases.enumerated()), id: \.element.id) { idx, s in
+                    Button {
+                        selectedSport = s
+                        activeField = .duration
+                    } label: {
+                        VStack(spacing: 8) {
+                            Image(systemName: s.icon).font(.title2)
+                            Text(s.rawValue).font(.subheadline)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 28)
+                        .background(selectedSport == s ? Color.red.opacity(0.12) : Color.clear)
+                        .foregroundStyle(selectedSport == s ? Color.red : Color.primary)
+                        .overlay(alignment: .bottom) {
+                            if idx < Sport.allCases.count - sportCols {
+                                Rectangle().fill(Color.primary.opacity(0.12)).frame(height: 1)
+                            }
+                        }
+                        .overlay(alignment: .trailing) {
+                            if idx % sportCols != sportCols - 1 {
+                                Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 1)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 200)
             }
 
-            ForEach($routes) { $route in
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        TextField("Route / project name", text: $route.name)
-                            .font(.subheadline.weight(.medium))
-                        Spacer()
-                        Toggle("Sent", isOn: $route.sent)
-                            .labelsHidden()
-                            .tint(.green)
+        case .duration:
+            HStack(spacing: 0) {
+                Picker("", selection: $durationMinutes) {
+                    ForEach(Array(stride(from: 0, through: 300, by: 5)), id: \.self) { min in
+                        Text(min == 0 ? "—" : "\(min) min").tag(min)
                     }
-                    HStack {
-                        TextField("Grade", text: $route.grade)
+                }
+                .pickerStyle(.wheel)
+            }
+            .padding(.horizontal)
+
+        case .target:
+            let targets = ["Push", "Pull", "Legs", "Arms", "Shoulders", "Full Body", "Other"]
+            let targetCols = 3
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: targetCols),
+                spacing: 0
+            ) {
+                ForEach(Array(targets.enumerated()), id: \.element) { idx, t in
+                    Button {
+                        target = t
+                        activeField = .none
+                    } label: {
+                        Text(t)
+                            .font(.subheadline)
                             .frame(maxWidth: .infinity)
-                        HStack(spacing: 4) {
-                            Text("Attempts")
+                            .padding(.vertical, 22)
+                            .background(target == t ? Color.red.opacity(0.12) : Color.clear)
+                            .foregroundStyle(target == t ? Color.red : Color.primary)
+                            .overlay(alignment: .bottom) {
+                                if idx < targets.count - targetCols {
+                                    Rectangle().fill(Color.primary.opacity(0.12)).frame(height: 1)
+                                }
+                            }
+                            .overlay(alignment: .trailing) {
+                                if idx % targetCols != targetCols - 1 {
+                                    Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 1)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+        case .climbType:
+            let climbTypes = ["Boulder", "Route", "Mixed"]
+            HStack(spacing: 0) {
+                ForEach(Array(climbTypes.enumerated()), id: \.element) { idx, t in
+                    Button {
+                        climbType = t
+                        activeField = .none
+                    } label: {
+                        Text(t)
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 28)
+                            .background(climbType == t ? Color.red.opacity(0.12) : Color.clear)
+                            .foregroundStyle(climbType == t ? Color.red : Color.primary)
+                            .overlay(alignment: .trailing) {
+                                if idx < climbTypes.count - 1 {
+                                    Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 1)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+        case .exercise:
+            exercisePanel
+
+        case .route:
+            routePanel
+
+        case .pose:
+            posePanel
+
+        case .none:
+            EmptyView()
+        }
+    }
+
+    // MARK: - Helpers
+
+    func inlineTextRow(
+        _ label: String, text: Binding<String>, placeholder: String,
+        keyboard: UIKeyboardType = .default
+    ) -> some View {
+        HStack(spacing: 16) {
+            Text(label)
+                .foregroundStyle(.secondary)
+                .frame(width: 72, alignment: .leading)
+            TextField(placeholder, text: text)
+                .keyboardType(keyboard)
+                .onTapGesture { activeField = .none }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(alignment: .bottom) {
+            Rectangle().fill(Color.primary.opacity(0.1)).frame(height: 1)
+        }
+    }
+
+    func addRowButton(label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: "plus.circle.fill").foregroundStyle(.red)
+                Text(label).foregroundStyle(.red)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(alignment: .bottom) {
+                Rectangle().fill(Color.primary.opacity(0.1)).frame(height: 1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    func suggestionsRow(
+        for query: String, pool: [String], onSelect: @escaping (String) -> Void
+    ) -> some View {
+        let filtered = pool.filter { query.isEmpty || $0.localizedCaseInsensitiveContains(query) }
+        return Group {
+            if !filtered.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(filtered, id: \.self) { name in
+                            Button(name) { onSelect(name) }
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
-                            TextField("1", text: $route.attempts)
-                                .keyboardType(.numberPad)
-                                .frame(width: 30)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color(.tertiarySystemBackground))
+                                .cornerRadius(12)
+                                .buttonStyle(.plain)
                         }
                     }
-                    .font(.caption)
-                    TextField("Notes", text: $route.notes)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .padding(.horizontal, 16)
                 }
-                .padding(.vertical, 2)
-            }
-            .onDelete { routes.remove(atOffsets: $0) }
-
-            Button { routes.append(RouteEntry()) } label: {
-                Label("Add Route", systemImage: "plus.circle")
             }
         }
     }
 
-    private var yogaSection: some View {
-        Section("Yoga Details") {
-            TextField("Style (e.g. Vinyasa 2, Yin)", text: $style)
-            TextField("Instructor", text: $instructor)
+    func numericField(_ placeholder: String, text: Binding<String>, decimal: Bool = false)
+        -> some View
+    {
+        TextField(placeholder, text: text)
+            .keyboardType(decimal ? .decimalPad : .numberPad)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+            .background(Color(.tertiarySystemBackground))
+            .cornerRadius(8)
+            .frame(maxWidth: .infinity)
+    }
 
-            ForEach($poses) { $pose in
-                TextField("Pose name", text: $pose.name)
-            }
-            .onDelete { poses.remove(atOffsets: $0) }
-
-            Button { poses.append(PoseEntry()) } label: {
-                Label("Add Pose", systemImage: "plus.circle")
-            }
+    func commitButton(label: String, disabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(disabled ? Color.secondary.opacity(0.3) : Color.red)
+                .foregroundStyle(.white)
+                .cornerRadius(8)
         }
+        .disabled(disabled)
+        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
     }
 
     // MARK: - Save
 
-    private func save() {
+    func save() {
+        guard let sport = selectedSport else { return }
         isSaving = true
-        errorMessage = nil
 
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
-        let dateString = fmt.string(from: date)
-
         let now = ISO8601DateFormatter().string(from: Date())
+
         let session = Session(
             id: nil,
-            date: dateString,
+            date: fmt.string(from: date),
             sport: sport.dbValue,
-            durationMinutes: Int(durationMinutes),
+            durationMinutes: durationMinutes == 0 ? nil : durationMinutes,
             notes: notes,
             feel: feel == 0 ? nil : feel,
             source: "manual",
@@ -323,69 +377,47 @@ struct ManualEntryView: View {
         let detail: SessionDetail
         switch sport {
         case .running:
-            let run = RunningSession(
-                id: nil, sessionId: 0,
-                distanceMiles: Double(distanceMiles),
-                time: runTime.isEmpty ? nil : runTime,
-                pace: pace.isEmpty ? nil : pace,
-                notes: nil
-            )
-            detail = .running(run)
-
+            detail = .running(
+                RunningSession(
+                    id: nil, sessionId: 0,
+                    distanceMiles: Double(distanceMiles),
+                    time: runTime.isEmpty ? nil : runTime,
+                    pace: pace.isEmpty ? nil : pace,
+                    notes: nil
+                ))
         case .lifting:
             let wt = WeightTrainingSession(
                 id: nil, sessionId: 0,
-                target: target.isEmpty ? nil : target,
-                notes: nil
-            )
-            let exList = exercises.filter { !$0.name.isEmpty }.map { ex in
-                Exercise(
-                    id: nil, wtTrainingSessionId: 0,
-                    name: ex.name,
-                    sets: Int(ex.sets),
-                    reps: Int(ex.reps),
-                    weight: Double(ex.weight),
-                    weightUnit: ex.weightUnit.isEmpty ? nil : ex.weightUnit,
-                    notes: ex.notes.isEmpty ? nil : ex.notes
-                )
-            }
+                target: target.isEmpty ? nil : target, notes: nil)
+            let exList: [(ExerciseEntry)] = exercises.filter { !$0.name.isEmpty }
             detail = .weightTraining(wt, exList)
-
         case .climbing:
-            let climb = ClimbingSession(
-                id: nil, sessionId: 0,
-                type: climbType.isEmpty ? nil : climbType
-            )
-            let routeList = routes.filter { !$0.name.isEmpty }.map { r in
+            let c = ClimbingSession(
+                id: nil, sessionId: 0, type: climbType.isEmpty ? nil : climbType)
+            let rList = routes.filter { !$0.name.isEmpty }.map {
                 ClimbingRoute(
                     id: nil, climbingSessionId: 0,
-                    name: r.name,
-                    sent: r.sent ? 1 : 0,
-                    attempts: Int(r.attempts) ?? 1,
-                    grade: r.grade.isEmpty ? nil : r.grade,
-                    notes: r.notes.isEmpty ? nil : r.notes
-                )
+                    name: $0.name, sent: $0.sent ? 1 : 0,
+                    attempts: Int($0.attempts) ?? 1,
+                    grade: $0.grade.isEmpty ? nil : $0.grade, notes: nil)
             }
-            detail = .climbing(climb, routeList)
-
+            detail = .climbing(c, rList)
         case .yoga:
-            let yoga = YogaSession(
+            let y = YogaSession(
                 id: nil, sessionId: 0,
-                style: style.isEmpty ? nil : style,
-                instructor: instructor.isEmpty ? nil : instructor,
-                notes: nil
-            )
-            let poseList = poses.filter { !$0.name.isEmpty }.map { p in
-                YogaPose(id: nil, yogaSessionId: 0, name: p.name)
+                style: yogaStyle.isEmpty ? nil : yogaStyle,
+                instructor: instructor.isEmpty ? nil : instructor, notes: nil)
+            let pList = poses.filter { !$0.name.isEmpty }.map {
+                YogaPose(id: nil, yogaSessionId: 0, name: $0.name)
             }
-            detail = .yoga(yoga, poseList)
+            detail = .yoga(y, pList)
         }
 
         do {
             try SessionRepository.shared.save(session: session, detail: detail)
             dismiss()
         } catch {
-            errorMessage = "Failed to save: \(error.localizedDescription)"
+            errorMessage = "Save failed: \(error.localizedDescription)"
             isSaving = false
         }
     }
