@@ -147,36 +147,10 @@ struct ManualEntryView: View {
                 .frame(height: UIScreen.main.bounds.height * 0.45)
 
         case .sport:
-            let sportCols = 2
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: sportCols),
-                spacing: 0
-            ) {
-                ForEach(Array(Sport.allCases.enumerated()), id: \.element.id) { idx, s in
-                    Button {
-                        selectedSport = s
-                        activeField = .duration
-                    } label: {
-                        VStack(spacing: 8) {
-                            Image(systemName: s.icon).font(.title2)
-                            Text(s.rawValue).font(.subheadline)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 28)
-                        .background(selectedSport == s ? Color.red.opacity(0.12) : Color.clear)
-                        .foregroundStyle(selectedSport == s ? Color.red : Color.primary)
-                        .overlay(alignment: .bottom) {
-                            if idx < Sport.allCases.count - sportCols {
-                                Rectangle().fill(Color.primary.opacity(0.12)).frame(height: 1)
-                            }
-                        }
-                        .overlay(alignment: .trailing) {
-                            if idx % sportCols != sportCols - 1 {
-                                Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 1)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
+            VStack(spacing: 0) {
+                SportsPickerGrid(selection: $selectedSport) { sport in
+                    selectedSport = sport
+                    activeField = sport == .running ? .runTime : .duration
                 }
             }
 
