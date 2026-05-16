@@ -6,117 +6,191 @@
 //
 
 import SwiftUI
-                                                                                                                  
+
 // MARK: - Duration (h / min / s) — reusable across sports
 
-struct DurationWheelPicker: View {
+struct DurationWheelPicker: UIViewRepresentable {
     @Binding var hours: Int
     @Binding var minutes: Int
     @Binding var seconds: Int
-                                                                                                                  
-    var body: some View {
-        HStack(spacing: 0) {
-            Picker("", selection: $hours) {
-                ForEach(0..<24, id: \.self) { Text("\($0)").tag($0) }
-            }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
-            .overlay(alignment: .center) {
-                HStack { Spacer(); Text("h").padding(.trailing, 8) }
-                    .allowsHitTesting(false)
-                    .font(.title3)
-            }
 
-            Picker("", selection: $minutes) {
-                ForEach(0..<60, id: \.self) { Text("\($0)").tag($0) }
-            }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
-            .overlay(alignment: .center) {
-                HStack { Spacer(); Text("min").padding(.trailing, 8) }
-                    .allowsHitTesting(false)
-                    .font(.title3)
-            }
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
 
-            Picker("", selection: $seconds) {
-                ForEach(0..<60, id: \.self) { Text("\($0)").tag($0) }
+    func makeUIView(context: Context) -> UIPickerView {
+        let picker = UIPickerView()
+        picker.dataSource = context.coordinator
+        picker.delegate = context.coordinator
+        picker.backgroundColor = .clear
+        DispatchQueue.main.async {
+            picker.subviews.forEach { $0.backgroundColor = .clear }
+        }
+        return picker
+    }
+
+    func updateUIView(_ uiView: UIPickerView, context: Context) {
+        uiView.selectRow(hours,   inComponent: 0, animated: false)
+        uiView.selectRow(minutes, inComponent: 1, animated: false)
+        uiView.selectRow(seconds, inComponent: 2, animated: false)
+    }
+
+    class Coordinator: NSObject, UIPickerViewDataSource, UIPickerViewDelegate {
+        var parent: DurationWheelPicker
+
+        init(_ parent: DurationWheelPicker) { self.parent = parent }
+
+        func numberOfComponents(in pickerView: UIPickerView) -> Int { 3 }
+
+        func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+            switch component {
+            case 0: return 24
+            case 1: return 60
+            case 2: return 60
+            default: return 0
             }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
-            .overlay(alignment: .center) {
-                HStack { Spacer(); Text("s").padding(.trailing, 8) }
-                    .allowsHitTesting(false)
-                    .font(.title3)
+        }
+
+        func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+            switch component {
+            case 0: return "\(row) h"
+            case 1: return "\(row) min"
+            case 2: return "\(row) s"
+            default: return nil
             }
         }
-        .overlay(alignment: .center){
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(.tertiarySystemFill))
-                .frame(height: 35)
-                .padding(.horizontal, 8)
-                .allowsHitTesting(false)
+
+        func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+            switch component {
+            case 0: parent.hours = row
+            case 1: parent.minutes = row
+            case 2: parent.seconds = row
+            default: break
+            }
         }
-        }
+    }
 }
-                                                                                                                  
+
 // MARK: - Distance (whole / .fraction / unit)
 
-struct DistanceWheelPicker: View {
+struct DistanceWheelPicker: UIViewRepresentable {
     @Binding var whole: Int
     @Binding var fraction: Int
     @Binding var unit: String
 
-    var body: some View {
-        HStack(spacing: 0) {
-            Picker("", selection: $whole) {
-                ForEach(0..<100, id: \.self) { Text("\($0)").tag($0) }
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> UIPickerView {
+        let picker = UIPickerView()
+        picker.dataSource = context.coordinator
+        picker.delegate = context.coordinator
+        picker.backgroundColor = .clear
+        DispatchQueue.main.async {
+            picker.subviews.forEach { $0.backgroundColor = .clear }
+        }
+        return picker
+    }
+
+    func updateUIView(_ uiView: UIPickerView, context: Context) {
+        uiView.selectRow(whole,    inComponent: 0, animated: false)
+        uiView.selectRow(fraction, inComponent: 1, animated: false)
+        uiView.selectRow(unit == "mi" ? 0 : 1, inComponent: 2, animated: false)
+    }
+
+    class Coordinator: NSObject, UIPickerViewDataSource, UIPickerViewDelegate {
+        var parent: DistanceWheelPicker
+        let units = ["mi", "km"]
+
+        init(_ parent: DistanceWheelPicker) { self.parent = parent }
+
+        func numberOfComponents(in pickerView: UIPickerView) -> Int { 3 }
+
+        func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+            switch component {
+            case 0: return 100
+            case 1: return 10
+            case 2: return 2
+            default: return 0
             }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
-                                                                                                                  
-            Picker("", selection: $fraction) {
-                ForEach(0..<10, id: \.self) { Text(".\($0)").tag($0) }
+        }
+
+        func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+            switch component {
+            case 0: return "\(row)"
+            case 1: return ".\(row)"
+            case 2: return units[row]
+            default: return nil
             }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
-                                                                                                                  
-            Picker("", selection: $unit) {
-                Text("mi").tag("mi")
-                Text("km").tag("km")
+        }
+
+        func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+            switch component {
+            case 0: parent.whole = row
+            case 1: parent.fraction = row
+            case 2: parent.unit = units[row]
+            default: break
             }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
         }
     }
 }
 
 // MARK: - Pace (min / sec / unit)
 
-struct PaceWheelPicker: View {
+struct PaceWheelPicker: UIViewRepresentable {
     @Binding var minutes: Int
     @Binding var seconds: Int
     @Binding var unit: String
-                                                                                                                  
-    var body: some View {
-        HStack(spacing: 0) {
-            Picker("", selection: $minutes) {
-                ForEach(0..<60, id: \.self) { Text("\($0)").tag($0) }
-            }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
-                                                                                                                  
-            Picker("", selection: $seconds) {
-                ForEach(0..<60, id: \.self) { Text(String(format: "%02d", $0)).tag($0) }
-            }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
 
-            Picker("", selection: $unit) {
-                Text("/mi").tag("mi")
-                Text("/km").tag("km")
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> UIPickerView {
+        let picker = UIPickerView()
+        picker.dataSource = context.coordinator
+        picker.delegate = context.coordinator
+        picker.backgroundColor = .clear
+        DispatchQueue.main.async {
+            picker.subviews.forEach { $0.backgroundColor = .clear }
+        }
+        return picker
+    }
+
+    func updateUIView(_ uiView: UIPickerView, context: Context) {
+        uiView.selectRow(minutes, inComponent: 0, animated: false)
+        uiView.selectRow(seconds, inComponent: 1, animated: false)
+        uiView.selectRow(unit == "mi" ? 0 : 1, inComponent: 2, animated: false)
+    }
+
+    class Coordinator: NSObject, UIPickerViewDataSource, UIPickerViewDelegate {
+        var parent: PaceWheelPicker
+        let units = ["/mi", "/km"]
+
+        init(_ parent: PaceWheelPicker) { self.parent = parent }
+
+        func numberOfComponents(in pickerView: UIPickerView) -> Int { 3 }
+
+        func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+            switch component {
+            case 0: return 60
+            case 1: return 60
+            case 2: return 2
+            default: return 0
             }
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
+        }
+
+        func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+            switch component {
+            case 0: return "\(row)"
+            case 1: return String(format: "%02d", row)
+            case 2: return units[row]
+            default: return nil
+            }
+        }
+
+        func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+            switch component {
+            case 0: parent.minutes = row
+            case 1: parent.seconds = row
+            case 2: parent.unit = String(units[row].dropFirst()) // strip "/" → "mi"/"km"
+            default: break
+            }
         }
     }
 }
