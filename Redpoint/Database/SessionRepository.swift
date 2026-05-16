@@ -78,7 +78,7 @@ final class SessionRepository {
     }
 
     func delete(session: Session) throws {
-        try db.write { database in
+        _ = try db.write { database in
             try session.delete(database)
         }
     }
