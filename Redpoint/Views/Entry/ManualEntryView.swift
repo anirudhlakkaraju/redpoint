@@ -4,6 +4,7 @@ import SwiftUI
 
 enum ActiveField: Equatable {
     case date, sport, duration
+    case runTime, runDistance, runPace
     case target, climbType
     case exercise(UUID?)
     case route(UUID?)
@@ -27,9 +28,14 @@ struct ManualEntryView: View {
     @State var feel = 0
 
     // Running
-    @State var distanceMiles = ""
-    @State var runTime = ""
-    @State var pace = ""
+    @State var runHours: Int = 0
+    @State var runMinutes: Int = 0
+    @State var runSeconds: Int = 0
+    @State var distanceWhole: Int = 0
+    @State var distanceFraction: Int = 0    // 0-9, represents .X
+    @State var paceMinutes: Int = 0
+    @State var paceSeconds: Int = 0
+    @State var runUnit: String = "mi"
 
     // Weight training
     @State var target = ""
@@ -99,9 +105,29 @@ struct ManualEntryView: View {
 
                 // ── Bottom panel ──────────────────────────────
                 if showsBottomPanel {
-                    bottomPanel
-                        .frame(minHeight: UIScreen.main.bounds.height * 0.45)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    VStack(spacing: 0){
+                        HStack {
+                            Text(activeField.panelTitle)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            
+                            Spacer()
+                            Button { activeField = .none} label: {
+                                Image(systemName: "xmark")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        
+                        .background(Color(.secondarySystemBackground))
+                        
+                        bottomPanel
+                    }
+                    .frame(minHeight: UIScreen.main.bounds.height * 0.45)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: activeField)
@@ -152,8 +178,22 @@ struct ManualEntryView: View {
                     selectedSport = sport
                     activeField = sport == .running ? .runTime : .duration
                 }
+                Spacer()
             }
-
+        case .runTime:
+            DurationWheelPicker(hours: $runHours, minutes: $runMinutes, seconds: $runSeconds)
+                .onChange(of: runHours) {_, _ in recomputePace()}
+                .onChange(of: runMinutes) {_, _ in recomputePace()}
+                .onChange(of: runSeconds) {_, _ in recomputePace()}
+            
+        case .runDistance:
+            DistanceWheelPicker(whole: $distanceWhole, fraction: $distanceFraction, unit: $runUnit)
+                .onChange(of: distanceWhole) {_, _ in recomputePace()}
+                .onChange(of: distanceFraction) {_, _ in recomputePace()}
+            
+        case .runPace:
+            PaceWheelPicker(minutes: $paceMinutes, seconds: $paceSeconds, unit: $runUnit)
+            
         case .duration:
             HStack(spacing: 0) {
                 Picker("", selection: $durationMinutes) {
@@ -351,12 +391,23 @@ struct ManualEntryView: View {
         let detail: SessionDetail
         switch sport {
         case .running:
+            let totalSecs = runHours * 3600 + runMinutes * 60 + runSeconds
+            let dist = (distanceWhole > 0 || distanceFraction > 0)
+                ? Double(distanceWhole) + Double(distanceFraction) / 10.0
+                : nil
+            let paceSecs = (paceMinutes > 0 || paceSeconds > 0)
+                ? paceMinutes * 60 + paceSeconds
+                : nil
+            
+            durationMinutes = runHours * 60 + runMinutes
+            
             detail = .running(
                 RunningSession(
                     id: nil, sessionId: 0,
-                    distanceMiles: Double(distanceMiles),
-                    time: runTime.isEmpty ? nil : runTime,
-                    pace: pace.isEmpty ? nil : pace,
+                    distance: dist,
+                    unit: runUnit,
+                    timeSeconds: totalSecs > 0 ? totalSecs : nil,
+                    paceSeconds: paceSecs,
                     notes: nil
                 ))
         case .lifting:

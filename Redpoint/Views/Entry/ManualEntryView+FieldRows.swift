@@ -79,3 +79,22 @@ extension ManualEntryView {
         }
     }
 }
+
+extension ActiveField {
+    var panelTitle: String {
+        switch self {
+        case .date:        return "Date"
+        case .sport:       return "Sport"
+        case .duration:    return "Duration"
+        case .runTime:     return "Time"
+        case .runDistance: return "Distance"
+        case .runPace:     return "Pace"
+        case .target:      return "Target"
+        case .climbType:   return "Type"
+        case .exercise:    return "Exercise"
+        case .route:       return "Route"
+        case .pose:        return "Pose"
+        case .none:        return ""
+        }
+    }
+}
