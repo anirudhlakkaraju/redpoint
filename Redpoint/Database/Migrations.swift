@@ -29,9 +29,10 @@ enum Migrations {
                 t.autoIncrementedPrimaryKey("id")
                 t.column("session_id", .integer).notNull()
                     .references("sessions", onDelete: .cascade)
-                t.column("distance_miles", .real)
-                t.column("time", .text)
-                t.column("pace", .text)
+                t.column("distance", .real)
+                t.column("unit", .text)
+                t.column("time_seconds", .integer)
+                t.column("pace_seconds", .integer)
                 t.column("notes", .text)
             }
             

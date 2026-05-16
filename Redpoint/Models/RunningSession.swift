@@ -4,9 +4,11 @@ import GRDB
 struct RunningSession: Codable, FetchableRecord, MutablePersistableRecord {
     var id: Int64?
     var sessionId: Int64
-    var distanceMiles: Double?
-    var time: String?
-    var pace: String?
+    
+    var distance: Double?
+    var unit: String?
+    var timeSeconds: Int?
+    var paceSeconds: Int?
     var notes: String?
 
     static let databaseTableName = "running"
@@ -14,9 +16,10 @@ struct RunningSession: Codable, FetchableRecord, MutablePersistableRecord {
     enum CodingKeys: String, CodingKey {
         case id
         case sessionId = "session_id"
-        case distanceMiles = "distance_miles"
-        case time
-        case pace
+        case distance
+        case unit
+        case timeSeconds = "time_seconds"
+        case paceSeconds = "pace_seconds"
         case notes
     }
 
